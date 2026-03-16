@@ -5,7 +5,7 @@ from datasets import load_dataset, Dataset
 from vllm import LLM, SamplingParams
 
 # --- Configuration ---
-MODEL_NAME = "openai/gpt-oss-20b" 
+MODEL_NAME = "Qwen/Qwen3.5-27B-FP8" 
 TP_SIZE = 4
 CTX_LEN = 32768 * 2
 DATASET_NAME = "G-reen/Resynth-Base"
@@ -124,6 +124,9 @@ def main():
     except Exception as e:
         print(f"Error initializing vLLM: {e}")
         return
+
+    # Get tokenizer from vLLM
+    tokenizer = llm.get_tokenizer()
     
     sampling_params = SamplingParams(
         temperature=0.6, 
@@ -157,13 +160,21 @@ def main():
             prompt_content = row['final_prompt']
             
             # 1. Delusional Prompts
-            p_del = delusional_template.replace("{{prompt}}", prompt_content)
+            p_del_content = delusional_template.replace("{{prompt}}", prompt_content)
+            # Apply chat template
+            p_del_messages = [{"role": "user", "content": p_del_content}]
+            p_del = tokenizer.apply_chat_template(p_del_messages, tokenize=False, add_generation_prompt=True)
+
             for _ in range(N_SAMPLES):
                 all_prompts.append(p_del)
                 request_metadata.append((i, "delusional"))
                 
             # 2. Tag Prompts
-            p_tag = tag_template.replace("{{prompt}}", prompt_content)
+            p_tag_content = tag_template.replace("{{prompt}}", prompt_content)
+            # Apply chat template
+            p_tag_messages = [{"role": "user", "content": p_tag_content}]
+            p_tag = tokenizer.apply_chat_template(p_tag_messages, tokenize=False, add_generation_prompt=True)
+
             for _ in range(N_SAMPLES):
                 all_prompts.append(p_tag)
                 request_metadata.append((i, "tag"))
