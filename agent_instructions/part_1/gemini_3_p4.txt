@@ -1,0 +1,8 @@
+I've recently generated my dataset G-reen/Resynth-Base, which has columns final_prompt where a text string lies. I want to run it through a set of classifiers with Qwen3.5-27B (thinking turned on) ran with vLLM.
+Here's how the classification works:
+1. Grab a row from the dataset, get the prompt. 
+2. Run delusional.txt 4 times, and tag.txt 4 times.
+3. Average the outputs of delusional.txt (float) and split tag.txt by comma and merge into a set (a set since there shouldn't be duplicates)
+4. Create a new row with the prompt, the delusional score, and the tags
+After repeating for all rows of the dataset, push to hub under G-reen/Resynth-Base-Scored
+You should use TP across 2 rtx_pro_6000 gpus with a ctx len of 32k and vLLM. Optimize the script so that it properly batches everything. Also filter out responses that are improperly generated. Make sure to not include the LLM's thinking in the response.
