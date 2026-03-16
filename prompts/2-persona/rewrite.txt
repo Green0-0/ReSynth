@@ -1,0 +1,6 @@
+Rewrite the original user prompt to fit the new character, keeping the details intact whenever possible. In particular, consider the style in which someone with this personality would type out a prompt online, use of grammar, caps, wording, spelling, etc, and emulate that style so it truly seems like that person's writing. It is extremely important that it is typed like a real person would, note that real people do not commonly type things such as em dashes (no —). Even though you should emulate the style of the character's writing, you should also make sure your prompt contains all the essential details and portions from the original prompt; it should not be a dumbed down or simplified version.
+
+As a reminder, here is the user prompt you are asked to rewrite:
+...
+
+Begin your response with ### Rewritten Prompt:, followed by the prompt rewritten in the typing style and perspective of the character.

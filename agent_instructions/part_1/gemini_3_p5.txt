@@ -1,0 +1,50 @@
+Write a dataset generation script that:
+1. Uniformly generates a first-last name pair from all possible names, with equal probability of male and female. Here is an example:
+import pandas as pd
+import random
+import nltk
+from nltk.corpus import names
+0. Download G-reen/Resynth-Base-Scored and filter for delusional_score < 0.6. you will generate a personality for each row in this dataset
+# 1. Download NLTK first names (if you haven't already)
+nltk.download('names', quiet=True)
+male_first_names = list(set(names.words('male.txt')))
+female_first_names = list(set(names.words('female.txt')))
+
+# 2. Fetch the US Census surname dataset (approx. 162,254 unique names)
+url = "https://raw.githubusercontent.com/fivethirtyeight/data/master/common-surnames/surnames.csv"
+df = pd.read_csv(url)
+
+# 3. Extract the names into a flat, unique list
+# We drop any missing values and capitalize them so they look like standard names
+exhaustive_last_names = df['name'].dropna().str.title().tolist()
+
+print(f"Total unique last names loaded: {len(exhaustive_last_names)}")
+
+# 4. Define our uniform generation functions
+def generate_exhaustive_male():
+    # Every single name has exactly a 1-in-162,254 chance of being picked
+    first = random.choice(male_first_names)
+    last = random.choice(exhaustive_last_names)
+    return f"{first} {last}"
+
+def generate_exhaustive_female():
+    first = random.choice(female_first_names)
+    last = random.choice(exhaustive_last_names)
+    return f"{first} {last}"
+
+# --- Test the Output ---
+print("\nExhaustive Male Names:")
+for _ in range(5):
+    print(generate_exhaustive_male())
+
+print("\nExhaustive Female Names:")
+for _ in range(5):
+    print(generate_exhaustive_female())
+2. Pull 1-3 traits from traits.txt
+3. 
+3. Pull the prompt from 2-persona init.txt, replace {{traits}} with the comma joined traits and the {{name}} with the full name. Also replace {{question}} with the prompt.
+4. Apply the LLM prompt template (with this and all future messages)
+5. Once you get a response, you may attempt to "evolve" the response 0-2 times randomly with a prompt from 2-persona/evolve/. After the prompt you should append "Begin your output with ### Profile:, do not output anything after you finish writing the character personality profile."
+6. You should upload the generated data to HF with the following columns: original_prompt (the prompt from the dataset) new_personality (the final generated personality, extracted after hte last instance of ### Profile), conversation (a list of dicts formatted user-assistant to store the record of how the personality was generated), tags (copied from the original dataset)
+
+Generate the dataset using vLLM and stepfun as shown in dataset_gen.py, make sure you batch correctly to speedup generation.

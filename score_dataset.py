@@ -224,8 +224,12 @@ def main():
             
             if not delusional_scores:
                 avg_delusional_score = None # Hugging Face datasets handles None as null
+                max_delusional_score = None
+                all_delusional_scores = None
             else:
                 avg_delusional_score = sum(delusional_scores) / len(delusional_scores)
+                max_delusional_score = max(delusional_scores)
+                all_delusional_scores = delusional_scores
             
             # Merge all tag sets
             final_tags_set = set()
@@ -240,6 +244,8 @@ def main():
             # Create new row entry
             new_row = original_row.copy()
             new_row['delusional_score'] = avg_delusional_score
+            new_row['max_delusional_score'] = max_delusional_score
+            new_row['all_delusional_scores'] = all_delusional_scores
             new_row['tags'] = final_tags_list
             new_row['raw_delusional_responses'] = raw_delusional_responses
             new_row['raw_tag_responses'] = raw_tag_responses
