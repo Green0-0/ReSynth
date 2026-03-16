@@ -5,14 +5,14 @@ from datasets import load_dataset, Dataset
 from vllm import LLM, SamplingParams
 
 # --- Configuration ---
-MODEL_NAME = "Kbenkhaled/Qwen3.5-27B-NVFP4" 
-TP_SIZE = 2
+MODEL_NAME = "Qwen/Qwen3.5-27B-FP8" 
+TP_SIZE = 4
 CTX_LEN = 32768 * 2
 DATASET_NAME = "G-reen/Resynth-Base"
 OUTPUT_DATASET_NAME = "G-reen/Resynth-Base-Scored"
 PROMPT_DELUSIONAL_PATH = "prompts/2-filter/delusional.txt"
 PROMPT_TAG_PATH = "prompts/2-filter/tag.txt"
-N_SAMPLES = 4
+N_SAMPLES = 8
 BATCH_SIZE = 1000 
 
 def load_prompt_template(path: str) -> str:
@@ -29,21 +29,33 @@ def clean_response(text: str) -> str:
 def parse_delusional_score(text: str) -> Optional[float]:
     """Extracts the float score from the response. Returns None if invalid."""
     text = clean_response(text)
-    # Regex to find numbers (floats or integers)
-    # Matches optional sign, digits, optional dot, digits
-    matches = re.findall(r"[-+]?\d*\.\d+|\d+", text)
-    if not matches:
-        return None
     
-    # Only analyze the last number found.
-    # If it does not fit the format (0-10), it should be discarded.
-    last_match = matches[-1]
-    try:
-        val = float(last_match)
-        if 0 <= val <= 10:
-            return val
-    except ValueError:
-        pass
+    # Check for header
+    header = "### Delusional Score:"
+    if header in text:
+        # Split by header and take the part after it
+        parts = text.split(header)
+        # Take the last part in case header appears multiple times (unlikely but safe)
+        content_after_header = parts[-1].strip()
+        
+        # Now find numbers in this content
+        matches = re.findall(r"[-+]?\d*\.\d+|\d+", content_after_header)
+        if not matches:
+            return None
+            
+        # If there are multiple numbers after the header, ignore the response
+        if len(matches) > 1:
+            return None
+            
+        # Process the single number
+        try:
+            val = float(matches[0])
+            if 0 <= val <= 10:
+                return val
+        except ValueError:
+            pass
+            
+        return None
     
     return None
 
@@ -51,14 +63,30 @@ def parse_tags(text: str) -> Set[str]:
     """Extracts comma-separated tags from the response."""
     text = clean_response(text)
     tags = set()
-    if not text:
+    
+    header = "### Tags:"
+    content_to_parse = "" # Default to empty if header not found
+    
+    if header in text:
+        parts = text.split(header)
+        content_to_parse = parts[-1].strip()
+    
+    # If header mandated, we strictly return empty if not found.
+    # The user said "only accept the tags after ### Tags:"
+    # This implies we should ignore text before it or if it's missing.
+    
+    if not content_to_parse:
         return tags
     
-    parts = text.split(',')
+    parts = content_to_parse.split(',')
     for part in parts:
         clean_part = part.strip().lower()
         clean_part = clean_part.rstrip('.') # Remove trailing periods
-        if clean_part:
+        
+        # Check word count
+        word_count = len(clean_part.split())
+        
+        if clean_part and word_count <= 5:
             tags.add(clean_part)
     return tags
 
@@ -85,7 +113,9 @@ def main():
             tensor_parallel_size=TP_SIZE,
             max_model_len=CTX_LEN,
             trust_remote_code=True,
-            gpu_memory_utilization=0.95 
+            gpu_memory_utilization=0.85,
+            max_num_seqs=128,
+            max_num_batched_tokens=8192
         )
     except Exception as e:
         print(f"Error initializing vLLM: {e}")
@@ -98,7 +128,6 @@ def main():
         min_p=0.0,
         presence_penalty=1.5,
         repetition_penalty=1.0,
-        max_num_seqs=160,
         max_tokens=512, 
         stop=["<|endoftext|>", "<|im_end|>"] 
     )
@@ -139,7 +168,7 @@ def main():
         outputs = llm.generate(all_prompts, sampling_params)
         
         # Container to aggregate results per row in this batch
-        batch_results = {i: {"delusional_scores": [], "tag_sets": []} for i in range(len(batch))}
+        batch_results = {i: {"delusional_scores": [], "tag_sets": [], "raw_delusional": [], "raw_tags": []} for i in range(len(batch))}
         
         # Distribute outputs back to rows
         for i, output in enumerate(outputs):
@@ -147,10 +176,12 @@ def main():
             generated_text = output.outputs[0].text
             
             if task_type == "delusional":
+                batch_results[row_idx]["raw_delusional"].append(generated_text)
                 score = parse_delusional_score(generated_text)
                 if score is not None:
                     batch_results[row_idx]["delusional_scores"].append(score)
             elif task_type == "tag":
+                batch_results[row_idx]["raw_tags"].append(generated_text)
                 tags = parse_tags(generated_text)
                 if tags: 
                     batch_results[row_idx]["tag_sets"].append(tags)
@@ -162,24 +193,41 @@ def main():
             
             delusional_scores = results["delusional_scores"]
             tag_sets_list = results["tag_sets"]
+            raw_delusional_responses = results["raw_delusional"]
+            raw_tag_responses = results["raw_tags"]
             
             # Filter condition: invalid if no valid delusional scores were generated
+            # We still might want to save the raw responses even if scoring failed for debugging?
+            # User said "Filter out responses that are improperly generated" in first turn. 
+            # In update, user just asks to "record the responses". 
+            # If we skip the row, we lose the recorded responses. 
+            # So maybe we keep the row but mark score as invalid? 
+            # Or we stick to the filter logic.
+            # "filter out responses that are improperly generated" implies dropping the row.
+            
+            # The user now asks: "If no scores delusional scores were generated or no tags were found you should use a NaN or None or whatever the default null value for hf is"
+            
             if not delusional_scores:
-                continue
-                
-            avg_delusional_score = sum(delusional_scores) / len(delusional_scores)
+                avg_delusional_score = None # Hugging Face datasets handles None as null
+            else:
+                avg_delusional_score = sum(delusional_scores) / len(delusional_scores)
             
             # Merge all tag sets
             final_tags_set = set()
             for t_set in tag_sets_list:
                 final_tags_set.update(t_set)
-                
-            final_tags_list = sorted(list(final_tags_set))
+            
+            if final_tags_set:
+                final_tags_list = sorted(list(final_tags_set))
+            else:
+                final_tags_list = None
             
             # Create new row entry
             new_row = original_row.copy()
             new_row['delusional_score'] = avg_delusional_score
             new_row['tags'] = final_tags_list
+            new_row['raw_delusional_responses'] = raw_delusional_responses
+            new_row['raw_tag_responses'] = raw_tag_responses
             
             new_rows.append(new_row)
 
