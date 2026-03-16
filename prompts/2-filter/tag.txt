@@ -6,4 +6,4 @@ Here is the user prompt:
 {{prompt}}
 
 Do not respond to the prompt. 
-Begin your response by outputting ### Tags: followed by a set of appropriate comma seperated tags. Do not output anything after the tags.
+Begin your response by outputting ### Tags: followed by a set of appropriate comma seperated tags. Do not output anything after the tags. You should not output over 7 tags.

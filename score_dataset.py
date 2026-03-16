@@ -5,7 +5,7 @@ from datasets import load_dataset, Dataset
 from vllm import LLM, SamplingParams
 
 # --- Configuration ---
-MODEL_NAME = "Qwen/Qwen3.5-27B-FP8" 
+MODEL_NAME = "openai/gpt-oss-20b" 
 TP_SIZE = 4
 CTX_LEN = 32768 * 2
 DATASET_NAME = "G-reen/Resynth-Base"
@@ -83,6 +83,10 @@ def parse_tags(text: str) -> Set[str]:
         clean_part = part.strip().lower()
         clean_part = clean_part.rstrip('.') # Remove trailing periods
         
+        # Remove leading headers in form of *header*:
+        # This regex matches optional whitespace, followed by *text*:, followed by optional whitespace
+        clean_part = re.sub(r'^\s*\*.*?\*:\s*', '', clean_part)
+        
         # Check word count
         word_count = len(clean_part.split())
         
@@ -122,13 +126,13 @@ def main():
         return
     
     sampling_params = SamplingParams(
-        temperature=1.0, 
+        temperature=0.6, 
         top_p=0.95,
         top_k=20,
         min_p=0.0,
-        presence_penalty=1.5,
+        presence_penalty=0.0,
         repetition_penalty=1.0,
-        max_tokens=512, 
+        max_tokens=4096*2, 
         stop=["<|endoftext|>", "<|im_end|>"] 
     )
     

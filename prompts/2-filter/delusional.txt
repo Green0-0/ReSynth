@@ -11,4 +11,4 @@ For reference, the scale looks like this:
 5 - The prompt has some parts that might be unplausible or don't make sense, but these could be misunderstandings on the side of the user.
 7 - The prompt is concerning, and is not something a normal person would write.
 10 - The prompt is completely incoherent, nonsense, a word salad, etc.
-Begin your response by outputting ### Delusional Score: followed by a singular number. Do not output anything after the number, which represents the score of the prompt.
+Begin your response by outputting ### Delusional Score: followed by a singular number. Do not output anything after the number, which represents the score of the prompt. You should end your response right upon writing ### Delusional Score: {number}.
