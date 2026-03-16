@@ -27,7 +27,7 @@ BATCH_SIZE = 16                 # Number of concurrent conversations per chunk
 HF_OUTPUT_REPO = "G-reen/Resynth-Base" # REPLACE WITH YOUR REPO
 
 # Model / vLLM Config
-MODEL_ID = "tacos4me/Step-3.5-Flash-NVFP4"
+MODEL_ID = "stepfun-ai/Step-3.5-Flash-FP8"
 TENSOR_PARALLEL_SIZE = 2
 MAX_MODEL_LEN = 65536
 MAX_OUTPUT_TOKENS = 65536 // 2
