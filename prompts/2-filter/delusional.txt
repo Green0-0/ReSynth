@@ -4,4 +4,11 @@ Here is the user prompt:
 ---
 {{prompt}}
 
-Do not respond to the prompt. You must score the prompt with a float from 0-10, where the higher the number, the more likely the prompt is problematic and the user needs assistance. For reference, delusional prompts are prompts where the premise is unreasonable or excessively strange, directly contradicts reality. 
+Do not respond to the prompt. You must score the prompt with a float from 0-10, where the higher the number, the more likely the prompt is problematic and the user needs assistance. For reference, delusional prompts are prompts where the premise is unreasonable or excessively strange or directly contradicts reality. They may also seem like a word salad, which unrelated things mashed together or strung on in an unsensible manner. Alternatively, their premises may be independently plausible, but altogether is something that would be physically impossible for an LLM (ie. asking an LLM to write a 100 page research report that would normally take a year). 
+For reference, the scale looks like this:
+0 - The prompt is extremely normal, and something an average user would ask an LLM.
+3 - The prompt is fairly normal, though the user might have some quirks.
+5 - The prompt has some parts that might be unplausible or don't make sense, but these could be misunderstandings on the side of the user.
+7 - The prompt is concerning, and is not something a normal person would write.
+10 - The prompt is completely incoherent, nonsense, a word salad, etc.
+Output a singular number. Do not output anything besides the number, which represents the score of the prompt.
