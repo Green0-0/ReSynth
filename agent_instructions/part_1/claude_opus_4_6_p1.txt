@@ -1,0 +1,236 @@
+I need to merge some datasets together from HF into a single seed dataset. This new seed a dataset has only two columns, 'seed', which is a column of string texts, which either include a passage (ie. wiki or pdf), or a user prompt, and 'source', which is the source dataset that text was gathered from. You must also filter the data so that the data is evenly distributed amongst some number of lengths. For example, if i specify a max length of 10000 and 4 bins, you should have 25% of your data be from 0-2500, another 25% from 2500-5000, and so on. You should ignore data that falls out of those bins, and you should truncate the bins at the end so that they are all the same size, ie. min(len(bins)). Furthermore, you must filter all datasets such that only english data is utilized. You should use an automatic language filter (ie. langdetect) if no language classification is provided.
+
+The following datasets should be used to build the dataset:
+https://huggingface.co/datasets/HuggingFaceFW/finepdfs-edu (1000-8000, 5 bins)
+
+Columns: 
+text
+string
+	
+id
+string
+	
+dump
+string
+	
+url
+string
+	
+date
+string
+	
+file_path
+string
+	
+offset
+int64
+	
+token_count
+int64
+	
+language
+string
+	
+page_average_lid
+string
+	
+page_average_lid_score
+float64
+	
+full_doc_lid
+string
+	
+full_doc_lid_score
+float64
+	
+per_page_languages
+list
+	
+is_truncated
+bool
+	
+extractor
+string
+	
+page_ends
+list
+	
+fw_edu_scores
+list
+	
+minhash_cluster_size
+int64
+	
+duplicate_count
+int64
+https://huggingface.co/datasets/HuggingFaceFW/finewiki (1000-8000, 5 bins)
+Columns:
+text
+string
+https://huggingface.co/datasets/MegaScience/MegaScience/ (0, 1500, 3 bins)
+Columns:
+question
+stringlengths
+3.19k3.98k
+<0.1%
+	
+answer
+string
+11
+17.1k
+	
+subject
+string
+8 values
+	
+reference_answer
+string
+0
+42.1k
+	
+source
+string
+You should only use the question column, and filter for questions <2k characters.
+https://huggingface.co/datasets/llm-aes/writing-prompts (100-250, 5 bins)
+Columns:
+prompt
+string
+You should filter for prompts > 100 characters. You should also append "Write a story with the following concept:" to the top.
+https://huggingface.co/datasets/stepfun-ai/Step-3.5-Flash-SFT (0-5000, 5 bins,)
+Columns:
+conversations
+list
+Format:
+{
+  "conversations": [
+    {
+      "role": "user",
+      "content": "...",
+      "loss_mask": 1,
+      "name": "",
+      "meta": {}
+    },
+    {
+      "role": "assistant",
+      "content": "...",
+      "loss_mask": 1,
+      "name": "",
+      "meta": {},
+      "reasoning_content": "..."
+    }
+  ]
+}
+You should filter against anything that specifies a tools list, ie: "role": "user", "tools": [{...
+Additionally you should only use the first user message.
+Warning: This dataset crashes on load because of inconsistent JSON schemas crashing the datasets library's Arrow conversion. Make sure the loader downloads and parses the raw JSON directly.
+https://huggingface.co/datasets/HuggingFaceH4/no_robots/ (0-3000, 3 bins)
+Columns: 
+prompt
+string
+	
+prompt_id
+string
+	
+messages
+list
+	
+category
+string
+You should not use prompt, but instead the first user message in the messages column, ie:
+[
+  {
+    "content": "Ken is a timid, fearful chatbot that is very hesitant to commit itself to anything.",
+    "role": "system"
+  },
+  {
+    "content": "Who was the first President of the United States?",
+    "role": "user"
+  },
+  ...
+https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k/ (0-4000, 4 bins)
+Columns: 
+id
+string
+	
+model_a
+string
+	
+model_b
+string
+	
+winner
+string
+	
+evaluation_session_id
+string
+	
+evaluation_order
+int32
+	
+conversation_a
+list
+	
+conversation_b
+list
+	
+full_conversation
+list
+	
+conv_metadata
+dict
+	
+category_tag
+dict
+	
+language
+string
+	
+is_code
+bool
+You should extract user messages under full_conversation that do not have an image, and only the first one, ie:
+[
+  {
+    "user": {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "give me 20 ideas for lyrics of emotional vocal trance that are not overused and are not cheesy",
+          "image": null,
+          "mimeType": null
+        }
+...
+https://huggingface.co/datasets/nothingiisreal/Kalomaze-Opus-Instruct-25k-filtered (0-3000, 3 bins)
+conversations
+list
+You should extract the first 'human' message under conversations:
+[
+  {
+    "from": "system",
+    "value": "You are an AI assistant named Claude created by Anthropic to be helpful, harmless, and honest."
+  },
+  {
+    "from": "human",
+    "value": "So Claude, if you had to pick between being Superman or Batman, which would you choose and why?"
+  },
+  ...
+https://huggingface.co/datasets/RLAIF/WritingPrompts-Filtered/ (2000-6000, 5 bins)
+post_text
+string
+	
+post_title
+string
+
+comment_texts
+list
+	
+num_stories
+int64
+You should take only sample rows where the comment_texts (one of them) has a length of over 2000 characters.
+You should put the post title on the top, and insert the comment with the length over 2000 characters below it. You only need one comment per prompt that fits the length requirement. Remember to apply the length truncation as well.
+
+Build the merged dataset by collecting 5k rows by streaming from each dataset that fall under the requirements, and shuffling them. Then, upload them to huggingface at G-reen/Resynth-Seed. Make sure you get the correct number of rows, as binning might mess up your row count.
+
+Do not run any terminal commands or download any packages, I will do that myself.
+
+You should report detailed statistics after the dataset merging finished. In particular, make sure you report if any datasets failed to hit the number of desired rows after filtering and binning, as well as other useful statistics. 

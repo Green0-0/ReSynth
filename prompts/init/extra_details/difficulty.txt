@@ -1,0 +1,1 @@
+The difficulty of the prompt should be [very low/low/medium/high/very high/elementary school level/middle school level/high school level/college level/graduate school level/PhD level].

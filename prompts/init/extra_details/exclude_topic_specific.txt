@@ -1,0 +1,1 @@
+The prompt should not mention or talk about the following topics: (engineering/chemistry/biology/physics/proofs/calculus/linear algebra/economics/probability/statistics/computer architecture/programming/history/philosophy/AI/cybersecurity/cryptography/blockchain/robots/astronomy/space/geography/translation/religion/teaching or education).

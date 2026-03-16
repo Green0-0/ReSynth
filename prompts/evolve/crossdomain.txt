@@ -1,0 +1,1 @@
+Rewrite the prompt by tying in some instructions from an entirely different domain.

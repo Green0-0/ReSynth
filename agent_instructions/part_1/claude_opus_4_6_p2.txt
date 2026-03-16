@@ -1,0 +1,6 @@
+I want to write a dataset generation script that:
+1. loads a prompt
+2. adds 1-3 seed prompts that are randomly generated with replacement from my dataset (G-reen/Resynth-Seed)
+3. subs the seed prompts into prompts/init/initial.txt after passing them into example_format.txt
+4. Generates 0 (20%), 1 (40%), 2 (30%), 3 (10%) extra_details, where a custom string formatter is applied to the extra detail (randomly pulled from the extra_details folder. Any text in parenthesis (a/b/c) is a multi string option, where you should split by the slash / and select randomly 1-3 options join them by comma and replace the item. ie (a/b/c) -> a, c. Any text in brackets [a/b/c] is a single string option, you should pick one. Then join the extra_details sentences and add them to the initial.txt prompt.
+5. After building the prompt, print it out. This is just for testing for now.

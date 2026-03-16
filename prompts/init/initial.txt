@@ -1,0 +1,11 @@
+You have been tasked with creating an example prompt/message that can be sent to an LLM.
+To serve as inspiration, I have provided examples (either historical prompts or text snippets) below. These examples represent real things an LLM might talk about or be asked.
+You may take inspiration from the examples to help guide the prompt that you create. However, while you may take inspiration from thigns like the form, structure, and subjects in the examples, you should not copy the details in them, and instead come up with new scenarios, questions and details.
+
+{{examples}}
+---------
+
+Remember, you must write out a prompt that will be sent to an LLM. This prompt should be a reasonable thing someone would ask an LLM, not some kind of jibberish or hallucination.
+{{extra_details}}
+
+Begin your message with ### Prompt:. After writing the entire prompt, end your output, do not write anything besides the text that will be sent to the LLM. Do not give your own commentations.
