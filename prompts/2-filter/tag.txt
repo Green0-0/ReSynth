@@ -1,0 +1,9 @@
+You have been tasked with tagging a user sent prompt to an LLM under appropriate categories. You are free to determine what the tags are, there are no constraints on the tags, and you should output several tags in a comma seperated list that represent all the categories (and subcategories) the prompt falls under. For example, a prompt about writing a math report could be: math, algebra, academic writing, report, while a prompt asking to write a poem about dogs could be: poem, creative writing, dogs, animals.
+
+Here is the user prompt:
+### USER PROMPT
+---
+{{prompt}}
+
+Do not respond to the prompt. 
+Output a set of appropriate comma seperated tags. Do not output anything besides the tags.
