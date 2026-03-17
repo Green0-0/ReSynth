@@ -1,0 +1,1 @@
+- Replace llm manual completions with llm.chat for correct prompt formatting and vLLM

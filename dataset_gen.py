@@ -171,33 +171,35 @@ def main():
 
     while len(completed_dataset) < TARGET_TOTAL_PROMPTS:
         # Determine how many items we need for this batch to avoid overshooting target heavily
-        current_batch_size = min(BATCH_SIZE, TARGET_TOTAL_PROMPTS - len(completed_dataset))
+        needed = TARGET_TOTAL_PROMPTS - len(completed_dataset)
+        if needed <= 0:
+            break
+            
+        current_batch_size = min(BATCH_SIZE, needed)
         
         # State tracker for the active batch
-        active_conversations = []
+        active_items = []
         for _ in range(current_batch_size):
-            initial_user_msg = build_prompt(seeds, initial_template, example_format_template, extra_detail_templates)
-            active_conversations.append({
-                "convo": [{"role": "user", "content": initial_user_msg}],
-                "evolves_left": random.randint(1, 3) # 1 initial gen + 1 to 3 evolves
+            msg_content = build_prompt(seeds, initial_template, example_format_template, extra_detail_templates)
+            active_items.append({
+                "convo": [{"role": "user", "content": msg_content}],
+                "evolves_left": random.randint(1, 3) 
             })
 
         # Process the static chunk until all conversations in it finish their evolve loops
-        while active_conversations:
-            # Format all active conversations with the chat template
-            formatted_prompts = [
-                tokenizer.apply_chat_template(item["convo"], tokenize=False, add_generation_prompt=True)
-                for item in active_conversations
-            ]
+        loop_active_items = active_items
+        while loop_active_items:
+            # Prepare conversations for chat API
+            conversations = [item["convo"] for item in loop_active_items]
             
-            # Generate next turn in parallel for all active prompts
-            outputs = llm.generate(formatted_prompts, sampling_params, use_tqdm=False)
+            # Generate using vLLM's chat method
+            outputs = llm.chat(conversations, sampling_params, use_tqdm=False)
             
-            next_active_conversations = []
+            next_loop_items = []
             
             for i, output in enumerate(outputs):
                 assistant_response = output.outputs[0].text.strip()
-                item = active_conversations[i]
+                item = loop_active_items[i]
                 
                 # Append assistant response to the conversation history
                 item["convo"].append({"role": "assistant", "content": assistant_response})
@@ -207,7 +209,7 @@ def main():
                     next_evolve_msg = random.choice(evolve_prompts_list)
                     item["convo"].append({"role": "user", "content": next_evolve_msg})
                     item["evolves_left"] -= 1
-                    next_active_conversations.append(item)
+                    next_loop_items.append(item)
                 else:
                     # Evolution finished: extract prompt, save, and drop from queue
                     final_text = extract_final_prompt(assistant_response)
@@ -218,7 +220,7 @@ def main():
                     pbar.update(1)
             
             # Overwrite active pool with remaining conversations for this chunk
-            active_conversations = next_active_conversations
+            loop_active_items = next_loop_items
             
             # Failsafe check
             if len(completed_dataset) >= TARGET_TOTAL_PROMPTS:

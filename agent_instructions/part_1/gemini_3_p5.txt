@@ -41,7 +41,6 @@ print("\nExhaustive Female Names:")
 for _ in range(5):
     print(generate_exhaustive_female())
 2. Pull 1-3 traits from traits.txt
-3. 
 3. Pull the prompt from 2-persona init.txt, replace {{traits}} with the comma joined traits and the {{name}} with the full name. Also replace {{question}} with the prompt.
 4. Apply the LLM prompt template (with this and all future messages)
 5. Once you get a response, you may attempt to "evolve" the response 0-2 times randomly with a prompt from 2-persona/evolve/. After the prompt you should append "Begin your output with ### Profile:, do not output anything after you finish writing the character personality profile."
