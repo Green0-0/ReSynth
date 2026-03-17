@@ -28,7 +28,7 @@ HF_OUTPUT_REPO = "G-reen/Resynth-Base" # REPLACE WITH YOUR REPO
 
 # Model / vLLM Config
 MODEL_ID = "stepfun-ai/Step-3.5-Flash-FP8"
-TENSOR_PARALLEL_SIZE = 4
+TENSOR_PARALLEL_SIZE = 2
 MAX_MODEL_LEN = 65536
 MAX_OUTPUT_TOKENS = 65536 // 2
 TEMPERATURE = 0.6
@@ -153,6 +153,7 @@ def main():
     llm = LLM(
         model=MODEL_ID,
         tensor_parallel_size=TENSOR_PARALLEL_SIZE,
+        pipeline_parallel_size=2,
         trust_remote_code=True,
         max_model_len=MAX_MODEL_LEN,
         max_num_seqs=BATCH_SIZE,

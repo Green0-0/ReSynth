@@ -30,10 +30,11 @@ MODEL_ID = "stepfun-ai/Step-3.5-Flash-FP8"
 DELUSIONAL_THRESHOLD = 0.6
 
 # vLLM Config
-TENSOR_PARALLEL_SIZE = 4
+TENSOR_PARALLEL_SIZE = 2
+PIPELINE_PARALLEL_SIZE = 2
 MAX_MODEL_LEN = 65536
 BATCH_SIZE = 16
-MAX_OUTPUT_TOKENS = 65536 // 2
+MAX_OUTPUT_TOKENS = 16384
 TEMPERATURE = 0.6
 TOP_P = 0.95
 
@@ -126,6 +127,7 @@ def main():
     llm = LLM(
         model=MODEL_ID,
         tensor_parallel_size=TENSOR_PARALLEL_SIZE,
+        pipeline_parallel_size=PIPELINE_PARALLEL_SIZE,
         trust_remote_code=True,
         max_model_len=MAX_MODEL_LEN,
         max_num_seqs=BATCH_SIZE,
@@ -257,9 +259,17 @@ def process_batch(llm, tokenizer, sampling_params, batch_items, evolve_templates
             item = active_items[i]
             generated_text = output.outputs[0].text.strip()
             
+            # Retry on empty output (suggests inference skip or error)
+            if not generated_text and item.get("retries", 0) < 3:
+                item["retries"] = item.get("retries", 0) + 1
+                next_active_items.append(item)
+                continue
+
             # Update history
             item["conversation"].append({"role": "assistant", "content": generated_text})
             item["last_response"] = generated_text
+            # Reset retries on successful generation
+            item["retries"] = 0
             
             # Check if we need to evolve
             if item["evolve_count"] < item["evolve_target"]:
@@ -272,14 +282,19 @@ def process_batch(llm, tokenizer, sampling_params, batch_items, evolve_templates
             else:
                 # MARK COMPLETED
                 # Extract final personality
-                if "### Profile" in generated_text:
-                    parts = generated_text.split("### Profile")
-                    # Take the last part, handle if colon follows
-                    personality = parts[-1].strip()
-                    if personality.startswith(":"): 
-                        personality = personality[1:].strip()
-                else:
-                    personality = generated_text
+                personality = None
+                if generated_text and generated_text.strip():
+                    if "### Profile" in generated_text:
+                        parts = generated_text.split("### Profile")
+                        # Take the last part, handle if colon follows
+                        p_candidate = parts[-1].strip()
+                        if p_candidate.startswith(":"): 
+                            p_candidate = p_candidate[1:].strip()
+                        
+                        if p_candidate:
+                            personality = p_candidate
+                    else:
+                        personality = generated_text.strip()
 
                 # Output strictly requested columns
                 result_list.append({
