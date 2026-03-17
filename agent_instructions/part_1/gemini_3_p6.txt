@@ -1,0 +1,6 @@
+Write a new script that is based on prompts/4-rewrite-message init.txt. 
+It should work as follows:
+1. Load the dataset G-reen/Resynth-Persona
+2. Replace init.txt {{prompt}} with the original_prompt and {{character}} with the new_personality per row of data
+3. Send the prompt to Qwen/Qwen3.5-27B-FP8 and get a response (reference datset_gen.py or gen_persona for how the code should generate with vLLM)
+4. Collect the dataset in the columns: system_prompt, init_message, original_message, and upload it to hf as Resynth-Prompt

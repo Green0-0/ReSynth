@@ -1,0 +1,14 @@
+You have been tasked with rewriting/restyling a fake written prompt from a user to match an imaginary character description.
+Here is the character description:
+### Character:
+---
+{{character}}
+------------------------
+Here is the prompt you should rewrite:
+### Prompt:
+---
+{{prompt}}
+------------------------
+
+Do not respond to the question. You must rewrite the question so that it fits the personality. In particular, the question should be written in a style appropriate for something that someone would write to an LLM, such as ChatGPT. Also think about the way the character would generally type things out online. Would they use perfect grammar, how would they type etc. Remember that people rarely ever type em dashes (—), so you should avoid them. Make sure to not accidentally shorten or exclude details from the prompt while rewriting it.
+Begin your output with ### Prompt:. Do not output anything after writing the prompt.
