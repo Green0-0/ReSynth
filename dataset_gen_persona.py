@@ -26,7 +26,7 @@ except ImportError:
 
 HF_SOURCE_DATASET = "G-reen/Resynth-Base-Scored" 
 HF_TARGET_DATASET = "G-reen/Resynth-Persona"
-MODEL_ID = "tacos4me/Step-3.5-Flash-NVFP4"
+MODEL_ID = "mistralai/Mistral-Small-4-119B-2603-NVFP4"
 DELUSIONAL_THRESHOLD = 0.6
 
 # vLLM Config
