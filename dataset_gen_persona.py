@@ -26,7 +26,7 @@ except ImportError:
 
 HF_SOURCE_DATASET = "G-reen/Resynth-Base-Scored" 
 HF_TARGET_DATASET = "G-reen/Resynth-Persona"
-MODEL_ID = "mistralai/Mistral-Small-4-119B-2603-NVFP4"
+MODEL_ID = "stepfun-ai/Step-3.5-Flash-FP8"
 DELUSIONAL_THRESHOLD = 0.6
 
 # vLLM Config
@@ -34,11 +34,11 @@ TENSOR_PARALLEL_SIZE = 4
 MAX_MODEL_LEN = 65536
 BATCH_SIZE = 16
 MAX_OUTPUT_TOKENS = 65536 // 2
-TEMPERATURE = 0.1
+TEMPERATURE = 0.6
 TOP_P = 0.95
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROMPTS_DIR = os.path.join(SCRIPT_DIR, "prompts", "2-persona")
+PROMPTS_DIR = os.path.join(SCRIPT_DIR, "prompts", "3-persona")
 INIT_PROMPT_PATH = os.path.join(PROMPTS_DIR, "init.txt")
 TRAITS_PATH = os.path.join(PROMPTS_DIR, "traits.txt")
 EVOLVE_DIR = os.path.join(PROMPTS_DIR, "evolve")
@@ -130,7 +130,6 @@ def main():
         max_model_len=MAX_MODEL_LEN,
         max_num_seqs=BATCH_SIZE,
         gpu_memory_utilization=0.9,
-        attention_backend="TRITON_MLA"
     )
     sampling_params = SamplingParams(
         temperature=TEMPERATURE, 
@@ -246,7 +245,7 @@ def process_batch(llm, tokenizer, sampling_params, batch_items, evolve_templates
         prompts = []
         for item in active_items:
             # Apply chat template
-            prompt_text = tokenizer.apply_chat_template(item["conversation"], tokenize=False)
+            prompt_text = tokenizer.apply_chat_template(item["conversation"], tokenize=False, add_generation_prompt=True)
             prompts.append(prompt_text)
             
         # Generate
