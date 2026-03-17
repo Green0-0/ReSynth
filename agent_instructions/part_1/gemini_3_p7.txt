@@ -1,0 +1,8 @@
+I need the final part of my dataset generation code written, which includes a full message roleplaying generation pipeline. In particular, it goes like this:
+0 (setup): Load G-reen/Resynth-Prompt, where system_prompt holds the character card and init_message holds the first message
+1: Queue the assistant with the init_message as the user message. Get the response.
+2: Queue the user. To queue the user you must queue the assistant. The first user message is the fake message in 5-chat fake_user_assistant_message.txt, with system prompt replaced with the character card. The first assistant response is filled with the init_message. The second user message is filled with the response from #1. Then, you get the assistant's response, which is the user's response.
+3. Now we go back to the assistant and add the user response, and get a new assistant response.
+4. Repeat until we have some number (randomly picked from 1-4) of chat rounds per row of data
+5. Upload the dataset with tree column, which is the conversation between the user and assistant as a list of dicts of user/assistant, the init message, and user_system_prompt for the user's system prompt.
+Make sure to batch to speedup generation, and for the engine and model/hyperparameters follow the setup done in dataset_gen_rewrite.py.
