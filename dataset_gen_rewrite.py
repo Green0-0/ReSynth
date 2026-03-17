@@ -26,6 +26,7 @@ TOP_K = 20
 MIN_P = 0.0
 PRESENCE_PENALTY = 0.0
 REPETITION_PENALTY = 1.0
+ENABLE_THINKING = False # Disable Qwen "thinking" feature
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROMPTS_DIR = os.path.join(SCRIPT_DIR, "prompts", "4-rewrite-message")
@@ -100,7 +101,11 @@ def main():
     print(f"Generating responses for {len(conversations)} items...")
     
     # Process in batches 
-    outputs = llm.chat(conversations, sampling_params)
+    outputs = llm.chat(
+        conversations, 
+        sampling_params, 
+        chat_template_kwargs={"enable_thinking": ENABLE_THINKING}
+    )
     
     results = []
     
