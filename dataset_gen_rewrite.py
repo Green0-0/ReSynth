@@ -109,15 +109,12 @@ def main():
         generated_text = output.outputs[0].text.strip()
         
         # The prompt says: "Begin your output with ### Prompt:."
-        # We need to extract the content AFTER that marker.
+        # We need to extract the content AFTER that marker
         
         final_message = generated_text
-        if "### Prompt:" in final_message:
-            final_message = final_message.split("### Prompt:", 1)[1].strip()
-        else:
-           # Fallback: if it didn't output the marker, just take the text
-           # but warn or clean up common artifacts
-           final_message = generated_text
+        if "### Prompt:" in generated_text:
+            parts = generated_text.split("### Prompt:")
+            final_message = parts[-1].strip()
         
         # Clean up any trailing dashes or newlines
         final_message = final_message.replace("------------------------", "").strip()
