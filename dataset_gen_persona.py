@@ -130,6 +130,7 @@ def main():
         max_model_len=MAX_MODEL_LEN,
         max_num_seqs=BATCH_SIZE,
         gpu_memory_utilization=0.9,
+        attention_backend="TRITON_MLA"
     )
     sampling_params = SamplingParams(
         temperature=TEMPERATURE, 
@@ -245,7 +246,7 @@ def process_batch(llm, tokenizer, sampling_params, batch_items, evolve_templates
         prompts = []
         for item in active_items:
             # Apply chat template
-            prompt_text = tokenizer.apply_chat_template(item["conversation"], tokenize=False, add_generation_prompt=True)
+            prompt_text = tokenizer.apply_chat_template(item["conversation"], tokenize=False)
             prompts.append(prompt_text)
             
         # Generate
