@@ -17,7 +17,7 @@ HF_TARGET_DATASET = "G-reen/Resynth-Prompt"
 MODEL_ID = "Qwen/Qwen3.5-27B-FP8"  # As requested by user
 
 # vLLM Config
-TENSOR_PARALLEL_SIZE = 2  # Matches reference configuration
+TENSOR_PARALLEL_SIZE = 4  # Matches reference configuration
 MAX_MODEL_LEN = 65536
 BATCH_SIZE = 64
 TEMPERATURE = 0.6
