@@ -243,26 +243,30 @@ def process_batch(llm, tokenizer, sampling_params, batch_items, evolve_templates
     active_items = batch_items
     
     while active_items:
-        # Prepare prompts
-        prompts = []
-        for item in active_items:
-            # Apply chat template
-            prompt_text = tokenizer.apply_chat_template(item["conversation"], tokenize=False, add_generation_prompt=True)
-            prompts.append(prompt_text)
-            
-        # Generate
-        outputs = llm.generate(prompts, sampling_params, use_tqdm=False)
+        # Prepare conversations for chat API
+        # vLLM chat expects a list of list of dicts: [ [{"role": "user", ...}], [{"role": "user", ...}]]
+        conversations = [item["conversation"] for item in active_items]
+        
+        # Generate using vLLM's chat method
+        # This uses the model's configuration to handle chat templates and special tokens automatically
+        # 'use_tqdm=False' to avoid polluting the progress bar
+        outputs = llm.chat(conversations, sampling_params, use_tqdm=False)
         
         next_active_items = []
         
         for i, output in enumerate(outputs):
             item = active_items[i]
+            # When using llm.chat, output.outputs[0].text contains the assistant's response.
+            # vLLM handles parsing the response content, so we should get just the text response,
+            # potentially with thinking tags if the model includes them in the generation content.
             generated_text = output.outputs[0].text.strip()
             
             # Retry on empty output (suggests inference skip or error)
-            if not generated_text and item.get("retries", 0) < 3:
-                item["retries"] = item.get("retries", 0) + 1
-                next_active_items.append(item)
+            if not generated_text:
+                if item.get("retries", 0) < 3:
+                    item["retries"] = item.get("retries", 0) + 1
+                    next_active_items.append(item)
+                # If retries exhausted, maybe log or skip? Here we just drop it from next_active
                 continue
 
             # Update history
