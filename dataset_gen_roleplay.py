@@ -6,6 +6,7 @@ Generates full roleplay conversations using a character persona and initial mess
 
 import os
 import random
+import re
 from datasets import load_dataset, Dataset
 from vllm import LLM, SamplingParams
 
@@ -20,7 +21,7 @@ MODEL_ID = "Qwen/Qwen3.5-27B-FP8"
 # vLLM Config (Matches dataset_gen_rewrite.py)
 TENSOR_PARALLEL_SIZE = 4
 MAX_MODEL_LEN = 65536
-BATCH_SIZE = 64
+BATCH_SIZE = 200
 TEMPERATURE = 0.6
 TOP_P = 0.95
 TOP_K = 20
@@ -80,6 +81,27 @@ def load_text(path):
     with open(path, "r", encoding="utf-8") as f:
         return f.read().strip()
 
+def clean_thinking(text):
+    """
+    Removes <think>...</think> blocks from text.
+    Handles potential unclosed tags or multi-line thinking.
+    Also handles cases where text starts inside a think block (missing opening tag).
+    """
+    # 1. Remove complete thinking blocks <think>...</think>
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+    
+    # 2. Handle case where response starts with content inside a think block 
+    # (e.g. prompt ended with <think>, so response contains ...content...</think>)
+    text = re.sub(r'^.*?</think>', '', text, flags=re.DOTALL)
+    
+    # 3. Handle unclosed think tag at the end (e.g. <think>... cutoff)
+    text = re.sub(r'<think>.*', '', text, flags=re.DOTALL) 
+    
+    cleaned = text.strip()
+    if not cleaned:
+        return "..." # Fallback for empty responses
+    return cleaned
+
 def main():
     print(f"Loading dataset: {HF_SOURCE_DATASET}")
     ds = load_dataset(HF_SOURCE_DATASET, split="train")
@@ -90,7 +112,7 @@ def main():
     print(f"Initializing vLLM with model: {MODEL_ID}")
     llm = LLM(
         model=MODEL_ID,
-        tensor_parallel_size=TENSOR_PARALLEL_SIZE,
+        pipeline_parallel_size=TENSOR_PARALLEL_SIZE,
         max_model_len=MAX_MODEL_LEN,
         trust_remote_code=True,
     )
@@ -102,7 +124,7 @@ def main():
         min_p=MIN_P,
         presence_penalty=PRESENCE_PENALTY,
         repetition_penalty=REPETITION_PENALTY,
-        max_tokens=8192 # Changed to 8k for safer roleplay length
+        max_tokens=8192*2
     )
     
     # Initialize sessions
@@ -149,10 +171,10 @@ def main():
                 generated_text = output.outputs[0].text.strip()
                 
                 # Update Main History (Assistant responds)
-                sess.history_main.append({"role": "assistant", "content": generated_text})
+                sess.history_main.append({"role": "assistant", "content": clean_thinking(generated_text)})
                 
                 # Update Sim History (User/Helper adds to history)
-                sess.history_sim.append({"role": "user", "content": generated_text})
+                sess.history_sim.append({"role": "user", "content": clean_thinking(generated_text)})
                 
                 # Switch turn
                 sess.waiting_for = "user"
@@ -183,10 +205,10 @@ def main():
                 generated_text = output.outputs[0].text.strip()
                 
                 # Update Sim History (Assistant/Character responds)
-                sess.history_sim.append({"role": "assistant", "content": generated_text})
+                sess.history_sim.append({"role": "assistant", "content": clean_thinking(generated_text)})
                 
                 # Update Main History (User/Character adds to history)
-                sess.history_main.append({"role": "user", "content": generated_text})
+                sess.history_main.append({"role": "user", "content": clean_thinking(generated_text)})
                 
                 # Switch turn
                 sess.waiting_for = "assistant"
