@@ -13,7 +13,7 @@ from huggingface_hub import hf_hub_download
 # Configuration
 # ═══════════════════════════════════════════════════════════════════════════════
 
-TARGET_ROWS = 20000          # desired rows per dataset
+TARGET_ROWS = 10000          # desired rows per dataset
 NUM_BINS = 5                # default number of length bins
 MAX_STREAM = 500_000        # safety cap: max rows streamed per dataset
 HF_REPO = "G-reen/Resynth-Seed"
@@ -354,7 +354,7 @@ def process_megascience():
     return collect_into_dynamic_bins(text_iter(), bin_edges, "MegaScience")
 
 
-# ---------- 4. writing-prompts (100-250) — KEEP THE SAME ----------
+# ---------- 4. writing-prompts (100-250) — merged last two bins ----------
 
 def process_writing_prompts():
     """llm-aes/writing-prompts  —  prompt column, prepend concept prefix.
@@ -366,13 +366,11 @@ def process_writing_prompts():
 
     PREFIX = "Write a story with the following concept:\n"
 
-    # We need to bin on the *raw prompt* length (100-250) but yield the
-    # prefixed text as the seed.  collect_into_bins bins on len(text), so
-    # we do the binning manually here instead.
-    num_bins = NUM_BINS
+    # Custom bins — last two of the original 5 equal-width bins merged
+    bin_edges = [(100, 130), (130, 160), (160, 190), (190, 250)]
+    num_bins = len(bin_edges)
     rows_per_bin = TARGET_ROWS // num_bins
     bins = {i: [] for i in range(num_bins)}
-    min_len, max_len = 100, 250
     streamed = 0
     out_of_range = 0
 
@@ -385,7 +383,7 @@ def process_writing_prompts():
 
         streamed += 1
         prompt_len = len(prompt)
-        bid = get_bin_index(prompt_len, min_len, max_len, num_bins)
+        bid = get_bin_index_dynamic(prompt_len, bin_edges)
         if bid < 0:
             out_of_range += 1
             continue
@@ -408,9 +406,6 @@ def process_writing_prompts():
         for text in bins[i]:
             result.append({"seed": text, "source": "writing-prompts"})
 
-    bin_width = (max_len - min_len) / num_bins
-    bin_ranges = [(int(min_len + i * bin_width), int(min_len + (i+1) * bin_width))
-                  for i in range(num_bins)]
     stats = {
         "source":                    "writing-prompts",
         "streamed":                  streamed,
@@ -419,7 +414,7 @@ def process_writing_prompts():
         "total_collected":           len(result),
         "target":                    TARGET_ROWS,
         "hit_target":               len(result) >= TARGET_ROWS,
-        "bin_ranges":                bin_ranges,
+        "bin_ranges":                bin_edges,
     }
     return result, stats
 
@@ -480,15 +475,13 @@ def process_step_flash_sft():
     return collect_into_dynamic_bins(text_iter(), bin_edges, "Step-3.5-Flash-SFT")
 
 
-# ---------- 6. no_robots — bins [0,750],[750,1500],[1500,4000] ----------
+# ---------- 6. no_robots — no binning ----------
 
 def process_no_robots():
     """HuggingFaceH4/no_robots  —  first user message from messages list.
-    Custom bins, exclude > 4000 chars."""
+    No binning."""
     print("\n🤖  Processing no_robots ...")
     ds = load_dataset("HuggingFaceH4/no_robots", streaming=True, split="train")
-
-    bin_edges = [(0, 750), (750, 1500), (1500, 4000)]
 
     def text_iter():
         for row in ds:
@@ -496,11 +489,11 @@ def process_no_robots():
             for msg in messages:
                 if msg.get("role") == "user":
                     content = msg.get("content", "")
-                    if content and len(content) <= 4000 and is_english(content):
+                    if content and is_english(content):
                         yield content
                     break  # only first user message
 
-    return collect_into_dynamic_bins(text_iter(), bin_edges, "no_robots")
+    return collect_no_bins(text_iter(), "no_robots")
 
 
 # ---------- 7. arena-human-preference-140k — bins [0,1000],[1000,2500],[2500,5000] ----------
@@ -550,7 +543,7 @@ def process_arena():
     ds = load_dataset("lmarena-ai/arena-human-preference-140k",
                        streaming=True, split="train")
 
-    bin_edges = [(0, 1000), (1000, 2500), (2500, 5000)]
+    bin_edges = [(0, 1000), (1000, 5000)]
 
     def text_iter():
         for row in ds:
@@ -578,7 +571,7 @@ def process_opus_instruct():
     ds = load_dataset("nothingiisreal/Kalomaze-Opus-Instruct-25k-filtered",
                        streaming=True, split="train")
 
-    bin_edges = [(0, 750), (750, 1500), (1500, 4000)]
+    bin_edges = [(0, 750), (750, 4000)]
 
     def text_iter():
         for row in ds:
