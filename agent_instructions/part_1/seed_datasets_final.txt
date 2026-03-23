@@ -1,0 +1,61 @@
+Modify build_seed_dataset to accept custom dynamic bin sizes, add two datasets, and for some datasets drop the binning. Also, when truncating, prefer truncating to the last punctuation mark instead of simply slicing the text, as this leaves unfinished trailing sentences.
+
+Always filter out non-english text.
+
+These are the new datasets:
+
+https://huggingface.co/datasets/openbmb/Ultra-FineWeb
+Use the `en` split, noting that the text content is under 'column'. Filter for 'score' >= 0.7.
+
+Use the 'en' split, noting that the text content is under 'text'.
+
+No binning, truncate to 4000 characters. Exclude rows with <1000 characters.
+
+https://huggingface.co/datasets/marianna13/zlib
+Use the 'TEXT' column, split each row by newline, and randomly pick a set of adjacent blocks (hopefully these constitute paragraphs of writing) with a bias towards the middle (ie. use a gaussian random with the mean in the middle), join them back together, and check for english. Finally, truncate to desired length.
+
+No binning, truncate to 4000 characters. Exclude rows with <2000 characters.
+
+https://huggingface.co/datasets/marianna13/vault_text
+Use the 'TEXT' column, split each row by newline, and randomly pick a set of adjacent blocks (hopefully these constitute paragraphs of writing) with a bias towards the middle (ie. use a gaussian random with the mean in the middle), join them back together, and check for english. Finally, truncate to desired length.
+
+No binning, truncate to 4000 characters. Exclude rows with <2000 characters.
+
+These are the previous datasets, but change the binning method:
+
+https://huggingface.co/datasets/HuggingFaceFW/finewiki
+
+Truncate to 4k, no binning. Exclude rows with <1000 characters.
+
+https://huggingface.co/datasets/HuggingFaceFW/finepdfs-edu
+
+Truncate to 4k, no binning. Exclude rows with <1000 characters.
+
+https://huggingface.co/datasets/MegaScience/MegaScience/
+
+Bin into [0, 500] and [500, 1500]. Exclude rows with over 1500 characters.
+
+https://huggingface.co/datasets/stepfun-ai/Step-3.5-Flash-SFT
+
+Bin into [0, 1000], [1000, 2000], [2000, 3500], [3500,6000]. Exclude rows with over 6000 characters.
+
+https://huggingface.co/datasets/HuggingFaceH4/no_robots/
+
+Bin into [0, 750], [750, 1500], [1500, 4000]. Exclude rows with over 4000 characters.
+
+https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k/
+
+Bin into [0, 1000], [1000, 2500], [2500, 5000]. Exclude rows with over 5000 characters.
+
+https://huggingface.co/datasets/nothingiisreal/Kalomaze-Opus-Instruct-25k-filtered
+
+Bin into [0, 750], [750, 1500], [1500, 4000]. Exclude rows with over 4000 characters.
+
+https://huggingface.co/datasets/llm-aes/writing-prompts
+
+Keep the same.
+
+https://huggingface.co/datasets/RLAIF/WritingPrompts-Filtered/
+
+Keep the same.
+
