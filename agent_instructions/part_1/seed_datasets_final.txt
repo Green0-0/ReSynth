@@ -41,21 +41,20 @@ Bin into [0, 1000], [1000, 2000], [2000, 3500], [3500,6000]. Exclude rows with o
 
 https://huggingface.co/datasets/HuggingFaceH4/no_robots/
 
-Bin into [0, 750], [750, 1500], [1500, 4000]. Exclude rows with over 4000 characters.
+Do not bin. Exclude rows with over 4000 characters.
 
 https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k/
 
-Bin into [0, 1000], [1000, 2500], [2500, 5000]. Exclude rows with over 5000 characters.
+Bin into [0, 1000], [1000, 5000]. Exclude rows with over 5000 characters.
 
 https://huggingface.co/datasets/nothingiisreal/Kalomaze-Opus-Instruct-25k-filtered
 
-Bin into [0, 750], [750, 1500], [1500, 4000]. Exclude rows with over 4000 characters.
+Bin into [0, 750], [750, 4000]. Exclude rows with over 4000 characters.
 
 https://huggingface.co/datasets/llm-aes/writing-prompts
 
-Keep the same.
+Bin into [100, 130], [130, 160], [160, 190], [190, 250].
 
 https://huggingface.co/datasets/RLAIF/WritingPrompts-Filtered/
 
 Keep the same.
-
