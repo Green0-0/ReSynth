@@ -620,33 +620,39 @@ def process_writing_prompts_filtered():
 # ---------- 10. Ultra-FineWeb — no binning, truncate 4k, min 1000 ----------
 
 def process_ultra_fineweb():
-    """openbmb/Ultra-FineWeb  —  'en' split, text in 'column', filter score >= 0.7.
+    """openbmb/Ultra-FineWeb  —  'en' split, text in 'content', filter score >= 0.7.
     No binning, truncate to 4000 chars, exclude < 1000 chars."""
     print("\n🌐  Processing Ultra-FineWeb ...")
     ds = load_dataset("openbmb/Ultra-FineWeb", streaming=True, split="en")
 
     def text_iter():
         total = 0
+        score_skip = 0
+        len_skip = 0
+        yielded = 0
         for row in ds:
             total += 1
             if total % 2000 == 0:
-                print(f"    [Ultra-FineWeb raw] rows={total:>8,}")
+                print(f"    [Ultra-FineWeb raw] rows={total:>8,}  "
+                      f"score_skip={score_skip}  len_skip={len_skip}  "
+                      f"yielded={yielded}")
 
             score = row.get("score", 0)
             if score < 0.7:
+                score_skip += 1
                 continue
 
-            text = row.get("column", "")
+            text = row.get("content", "")
             if not text or len(text) < 1000:
+                len_skip += 1
                 continue
 
             text = truncate_at_punctuation(text, 4000)
             if len(text) < 1000:
+                len_skip += 1
                 continue
 
-            if not is_english(text):
-                continue
-
+            yielded += 1
             yield text
 
     return collect_no_bins(text_iter(), "Ultra-FineWeb")
