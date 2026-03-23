@@ -5,7 +5,7 @@ Always filter out non-english text.
 These are the new datasets:
 
 https://huggingface.co/datasets/openbmb/Ultra-FineWeb
-Use the `en` split, noting that the text content is under 'column'. Filter for 'score' >= 0.7.
+Use the `en` split, noting that the text content is under 'content'. Filter for 'score' >= 0.7.
 
 Use the 'en' split, noting that the text content is under 'text'.
 

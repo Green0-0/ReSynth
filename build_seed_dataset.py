@@ -662,16 +662,29 @@ def process_ultra_fineweb():
 
 def process_zlib():
     """marianna13/zlib  —  'TEXT' column, split by newline, pick gaussian-centred
-    adjacent blocks, check english.  No binning, truncate to 4000, min 2000."""
+    adjacent blocks, check english.  No binning, truncate to 4000, min 2000.
+    Uses 'language' column for fast pre-filter."""
     print("\n📚  Processing zlib ...")
     ds = load_dataset("marianna13/zlib", streaming=True, split="train")
 
     def text_iter():
         total = 0
+        lang_skip = 0
+        block_skip = 0
+        len_skip = 0
+        yielded = 0
         for row in ds:
             total += 1
-            if total % 2000 == 0:
-                print(f"    [zlib raw] rows={total:>8,}")
+            if total % 500 == 0:
+                print(f"    [zlib raw] rows={total:>8,}  "
+                      f"lang_skip={lang_skip}  block_skip={block_skip}  "
+                      f"len_skip={len_skip}  yielded={yielded}")
+
+            # Fast language pre-filter
+            lang = (row.get("language") or "").lower()
+            if lang and lang not in ("en", "eng", "english"):
+                lang_skip += 1
+                continue
 
             raw = row.get("TEXT", "")
             if not raw:
@@ -679,15 +692,20 @@ def process_zlib():
 
             extracted = extract_adjacent_blocks(raw)
             if extracted is None:
+                block_skip += 1
                 continue
 
             extracted = truncate_at_punctuation(extracted, 4000)
             if len(extracted) < 2000:
+                len_skip += 1
                 continue
 
-            if not is_english(extracted):
+            # Only use slow langdetect if no language column was present
+            if not lang and not is_english(extracted):
+                lang_skip += 1
                 continue
 
+            yielded += 1
             yield extracted
 
     return collect_no_bins(text_iter(), "zlib")
@@ -704,10 +722,16 @@ def process_vault_text():
 
     def text_iter():
         total = 0
+        block_skip = 0
+        len_skip = 0
+        lang_skip = 0
+        yielded = 0
         for row in ds:
             total += 1
-            if total % 2000 == 0:
-                print(f"    [vault_text raw] rows={total:>8,}")
+            if total % 500 == 0:
+                print(f"    [vault_text raw] rows={total:>8,}  "
+                      f"block_skip={block_skip}  len_skip={len_skip}  "
+                      f"lang_skip={lang_skip}  yielded={yielded}")
 
             raw = row.get("TEXT", "")
             if not raw:
@@ -715,15 +739,20 @@ def process_vault_text():
 
             extracted = extract_adjacent_blocks(raw)
             if extracted is None:
+                block_skip += 1
                 continue
 
             extracted = truncate_at_punctuation(extracted, 4000)
             if len(extracted) < 2000:
+                len_skip += 1
                 continue
 
-            if not is_english(extracted):
+            # Check english on first 500 chars for speed
+            if not is_english(extracted[:500]):
+                lang_skip += 1
                 continue
 
+            yielded += 1
             yield extracted
 
     return collect_no_bins(text_iter(), "vault_text")
