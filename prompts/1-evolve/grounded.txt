@@ -1,0 +1,1 @@
+Make your prompt grounded or improve the grounding of the prompt, ie. it should come with a medium to long (text, no images) attachment that informs and guides the response. Write a new prompt, closely related to the current one, and write the associated attachment below it.

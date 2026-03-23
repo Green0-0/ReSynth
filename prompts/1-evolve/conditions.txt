@@ -1,0 +1,1 @@
+Add some extra, response conditions (ie. formatting) to the prompt.

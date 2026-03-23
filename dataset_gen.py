@@ -22,12 +22,12 @@ from vllm import LLM, SamplingParams
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Generation Targets
-TARGET_TOTAL_PROMPTS = 160      # Stop after generating this many final prompts
-BATCH_SIZE = 16                 # Number of concurrent conversations per chunk
+TARGET_TOTAL_PROMPTS = 5000      # Stop after generating this many final prompts
+BATCH_SIZE = 64                 # Number of concurrent conversations per chunk
 HF_OUTPUT_REPO = "G-reen/Resynth-Base" # REPLACE WITH YOUR REPO
 
 # Model / vLLM Config
-MODEL_ID = "stepfun-ai/Step-3.5-Flash-FP8"
+MODEL_ID = "tacos4me/Step-3.5-Flash-NVFP4"
 TENSOR_PARALLEL_SIZE = 2
 MAX_MODEL_LEN = 65536
 MAX_OUTPUT_TOKENS = 65536 // 2

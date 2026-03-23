@@ -1,1 +1,1 @@
-The prompt is way too easy, make it more difficult, but make sure it is not impossible (it should be answerable in a single response) or self contradictory.
+The prompt is way too easy, make it more difficult.
