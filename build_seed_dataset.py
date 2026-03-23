@@ -238,28 +238,42 @@ def collect_into_bins(text_iter, min_len, max_len, source_name,
     return result, stats
 
 
-def extract_adjacent_blocks(text: str, min_blocks: int = 2,
-                            max_blocks: int = 8) -> str | None:
-    """Split *text* by newlines, pick a gaussian-centred window of adjacent
-    blocks, join them, and return.  Returns None if the result is empty."""
+def extract_adjacent_blocks(text: str, target_chars: int = 4000,
+                            min_blocks: int = 2) -> str | None:
+    """Split *text* by newlines, pick a gaussian-centred starting position,
+    then expand outward adding blocks until we hit *target_chars* or run out
+    of blocks.  Returns None if the result is empty or has fewer than
+    *min_blocks* non-empty lines."""
     blocks = [b for b in text.split('\n') if b.strip()]
     if len(blocks) < min_blocks:
         return None
 
-    # How many blocks to pick (random, clamped)
-    n_pick = random.randint(min_blocks, min(max_blocks, len(blocks)))
-
-    # Gaussian centre bias: mean at middle, std = len/6 (most of the mass in
-    # the middle third)
+    # Gaussian centre bias: mean at middle, std = len/6
     mean = len(blocks) / 2.0
     std = max(len(blocks) / 6.0, 1.0)
     centre = int(random.gauss(mean, std))
-    # clamp to valid range
-    start = centre - n_pick // 2
-    start = max(0, min(start, len(blocks) - n_pick))
-    end = start + n_pick
+    centre = max(0, min(centre, len(blocks) - 1))
 
-    joined = '\n'.join(blocks[start:end]).strip()
+    # Expand outward from centre until we hit the char budget
+    lo, hi = centre, centre + 1          # half-open: blocks[lo:hi]
+    char_count = len(blocks[centre])
+    while char_count < target_chars:
+        grew = False
+        # Try expanding downward first, then upward (alternating)
+        if lo > 0:
+            lo -= 1
+            char_count += len(blocks[lo]) + 1   # +1 for newline
+            grew = True
+        if char_count >= target_chars:
+            break
+        if hi < len(blocks):
+            char_count += len(blocks[hi]) + 1
+            hi += 1
+            grew = True
+        if not grew:
+            break
+
+    joined = '\n'.join(blocks[lo:hi]).strip()
     if not joined:
         return None
     return joined
